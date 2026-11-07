@@ -1,0 +1,41 @@
+name: Verify web research release
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev cmake ninja-build
+      - run: npm ci
+      - name: Configure reproducible Rust paths
+        run: node -e "const fs=require('node:fs'),os=require('node:os');const flags=['--remap-path-prefix='+process.cwd()+'=/n2-kraken','--remap-path-prefix='+os.homedir()+'=/build-home'];fs.appendFileSync(process.env.GITHUB_ENV,'CARGO_ENCODED_RUSTFLAGS='+flags.join(String.fromCharCode(31))+'\n');"
+      - run: npm run build:native
+      - run: cargo +1.98.0 test --manifest-path native/Cargo.toml --release --locked --all-targets -j 2
+      - run: cargo +1.98.0 test --manifest-path native/Cargo.toml --release --locked --no-default-features --all-targets -j 2
+      - run: cargo +1.98.0 clippy --manifest-path native/Cargo.toml --release --locked --all-targets -j 2 -- -D warnings
+      - run: cargo +1.98.0 fmt --manifest-path native/Cargo.toml --check
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=low
+      - if: runner.os == 'Linux'
+        run: cargo +1.98.0 install cargo-audit --version 0.22.2 --locked -j 2
+      - if: runner.os == 'Linux'
+        run: cargo audit --file native/Cargo.lock --deny warnings
+      - run: npm pack --dry-run
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kraken-native-${{ runner.os }}-${{ runner.arch }}
+          path: bin/*
+          if-no-files-found: error

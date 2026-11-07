@@ -1,0 +1,40 @@
+N2 Kraken 1.0.0
+
+Kraken module code
+Copyright (c) 2026 N2 AI Family
+MIT License, reproduced in LICENSE and native/LICENSE.
+
+N2 Mimir 3.0.3
+https://github.com/choihyunsus/n2-mimir/tree/v3.0.3
+The Node.js facade uses Mimir's shared database implementation. Its distributed
+license applies non-commercial terms and a separate commercial license.
+See LICENSE-N2-MIMIR and LICENSE-APACHE. The Mimir native core has its own MIT
+license in that dependency's distribution.
+
+wreq-util 0.2.0
+https://github.com/0x676e67/wreq-util
+Apache-2.0. The vendored source includes its upstream LICENSE and an
+N2-PATCHES.md describing the zstd dependency update. Cargo.lock identifies the
+exact dependencies used by the native worker.
+
+Native dependencies
+The native dependency license report identifies the resolved crate versions
+and reproduces their license text. Dependencies with MPL-2.0 terms include
+cssparser 0.36.0, cssparser-macros 0.6.1, dtoa-short 0.3.5 and selectors 0.36.1.
+Their corresponding source archives are available from the exact crates.io
+versions recorded in native/Cargo.lock and the license report.
+
+BoringSSL bundled by btls-sys 0.5.6
+https://crates.io/api/v1/crates/btls-sys/0.5.6/download
+The native TLS implementation includes the BoringSSL source shipped in this
+locked crate. Its complete aggregated license is reproduced separately in
+LICENSE-BORINGSSL, covering the native library in addition to the Rust wrapper.
+
+Node.js dependencies
+The package manager installs @modelcontextprotocol/sdk, Zod, better-sqlite3
+and their dependency distributions with their respective licenses. The
+package lock records the exact versions used for release verification.
+
+Chrome and Ollama
+These are separately installed operator-provided applications. Their own
+distribution and model licenses apply to their installation and use.

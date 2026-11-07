@@ -1,0 +1,13 @@
+node_modules/
+dist/
+native/target/
+bin/
+data/
+*.tgz
+*.db
+*.db-wal
+*.db-shm
+*.log
+.env
+.cargo-ok
+native/vendor/wreq-util/.github/

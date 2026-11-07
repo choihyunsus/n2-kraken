@@ -1,0 +1,22 @@
+N2 Kraken native dependency licenses
+
+Generated from the locked native dependency graph using cargo-about.
+Source archives correspond to the crate versions listed below. The vendored
+wreq-util source additionally includes the patch described in N2-PATCHES.md.
+
+{{#each licenses}}
+===============================================================================
+{{{name}}} ({{id}})
+{{#each used_by}}
+{{crate.name}} {{crate.version}}
+{{#if crate.authors}}Authors: {{#each crate.authors}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}
+{{#if crate.source}}
+Source: https://crates.io/api/v1/crates/{{crate.name}}/{{crate.version}}/download
+{{else}}
+Source: {{crate.repository}}
+{{/if}}
+{{/each}}
+
+{{{text}}}
+
+{{/each}}

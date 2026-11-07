@@ -1,0 +1,47 @@
+[package]
+name = "n2-kraken"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.98"
+description = "Bounded web retrieval, browser rendering and source-backed research"
+license = "MIT"
+repository = "https://github.com/choihyunsus/n2-kraken"
+autobins = false
+
+[[bin]]
+name = "n2-kraken-worker"
+path = "src/main.rs"
+
+[features]
+default = ["ollama"]
+ollama = []
+
+[dependencies]
+async-trait = "0.1"
+chromiumoxide = { version = "0.9", default-features = false }
+ego-tree = "0.11.0"
+encoding_rs = "0.8"
+futures = "0.3"
+httparse = "1.10.1"
+mime = "0.3"
+regex = "1"
+scraper = "0.26.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11.0"
+thiserror = "2.0.18"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+url = "2.5.8"
+uuid = { version = "1.23.0", features = ["v4"] }
+wreq = { version = "0.16.3", features = ["json", "cookies", "brotli", "gzip", "deflate", "stream"] }
+wreq-util = { version = "0.2.0", path = "vendor/wreq-util" }
+
+[dev-dependencies]
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }
+
+[profile.release]
+strip = true

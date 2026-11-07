@@ -1,0 +1,34 @@
+{
+  "name": "n2-kraken",
+  "version": "1.0.0",
+  "description": "Bounded public web retrieval and source-backed research over the shared Soul database.",
+  "main": "dist/library.js",
+  "types": "dist/library.d.ts",
+  "bin": { "n2-kraken": "dist/index.js" },
+  "files": [
+    "dist/", "bin/", "native/Cargo.toml", "native/Cargo.lock", "native/src/", "native/LICENSE",
+    "native/about.toml", "native/about.hbs", "native/rust-toolchain.toml", "native/vendor/wreq-util/src/",
+    "native/vendor/wreq-util/examples/", "native/vendor/wreq-util/tests/",
+    "native/vendor/wreq-util/Cargo.toml", "native/vendor/wreq-util/Cargo.toml.orig",
+    "native/vendor/wreq-util/LICENSE", "native/vendor/wreq-util/N2-PATCHES.md",
+    "native/vendor/wreq-util/README.md", "native/vendor/wreq-util/CHANGELOG.md",
+    "native/vendor/wreq-util/.cargo_vcs_info.json", "scripts/build-native.cjs",
+    "LICENSE", "LICENSE-*", "THIRD-PARTY-NOTICES", "README.md", "README.ko.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "build:native": "node scripts/build-native.cjs",
+    "test": "npm run build && node --test --test-timeout=45000 tests/*.test.cjs"
+  },
+  "engines": { "node": ">=22.0.0" },
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/choihyunsus/n2-kraken" },
+  "dependencies": {
+    "n2-mimir": "https://github.com/choihyunsus/n2-mimir/releases/download/v3.0.3/n2-mimir-3.0.3.tgz",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7",
+    "better-sqlite3": "^12.11.1"
+  },
+  "devDependencies": { "@types/node": "^22.19.15", "typescript": "^5.9.3" }
+}
