@@ -87,27 +87,35 @@ async function serve(engine: Kraken): Promise<void> {
   const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
   const server = createMcpServer(engine);
   const stop = () => {
-    void server.close().finally(() => engine.close());
+    void server
+      .close()
+      .catch(reportFailure)
+      .finally(() => engine.close())
+      .catch(reportFailure);
   };
   server.server.onclose = () => {
     process.removeListener('SIGINT', stop);
     process.removeListener('SIGTERM', stop);
-    void engine.close();
+    void engine.close().catch(reportFailure);
   };
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
   try {
     await server.connect(new StdioServerTransport());
   } catch (error) {
+    process.removeListener('SIGINT', stop);
+    process.removeListener('SIGTERM', stop);
     await engine.close();
     throw error;
   }
 }
 
-main().catch((error: unknown) => {
+function reportFailure(error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
   process.stderr.write(
     JSON.stringify({ error: Array.from(message).slice(0, 2000).join('') }) + '\n',
   );
   process.exitCode = 1;
-});
+}
+
+main().catch(reportFailure);

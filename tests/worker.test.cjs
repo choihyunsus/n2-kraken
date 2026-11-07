@@ -165,3 +165,88 @@ test('child transport bounds diagnostic output and stops deadline or cancellatio
   setTimeout(() => controller.abort(), 50);
   await assert.rejects(pending, /cancelled/);
 });
+
+test('cancellation terminates the owned child and its spawned descendant', async () => {
+  const child = fake(
+    "const {spawn}=require('node:child_process');const owned=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore',windowsHide:true});console.log(owned.pid);setInterval(()=>{},1000);",
+  );
+  const controller = new AbortController();
+  let buffer = '',
+    pid,
+    timer;
+  const ready = new Promise((resolve, reject) => {
+    timer = setTimeout(() => reject(new Error('Descendant fixture did not start')), 3000);
+    child.stdout.on('data', (chunk) => {
+      buffer += chunk.toString();
+      if (/^\d+\r?\n/.test(buffer)) {
+        pid = Number(buffer.trim());
+        clearTimeout(timer);
+        resolve();
+      }
+    });
+  });
+  const pending = collectWorker(child, '{}', 5000, controller.signal);
+  const rejected = assert.rejects(pending, /cancelled|deadline/);
+  try {
+    await ready;
+    controller.abort();
+    await rejected;
+    const deadline = Date.now() + 2000;
+    let alive = true;
+    while (alive && Date.now() < deadline) {
+      try {
+        process.kill(pid, 0);
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      } catch {
+        alive = false;
+      }
+    }
+    assert.equal(alive, false, 'Owned descendant must exit after cancellation');
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+    await rejected;
+    if (pid) {
+      try {
+        process.kill(pid, 'SIGKILL');
+      } catch {}
+    }
+  }
+});
+
+test('library entry points enforce requested output bounds and source identity independently', async (t) => {
+  const { settings } = fixture(t),
+    engine = new Kraken({ ...settings, workerPath });
+  try {
+    engine.worker.call = async () => ({
+      title: '',
+      source_url: '',
+      markdown: 'too large',
+      truncated: false,
+      iframe_srcs: [],
+    });
+    await assert.rejects(
+      engine.extract({ html: '', config: { max_length: 1 } }),
+      /requested byte limit/,
+    );
+    await assert.rejects(
+      engine.fetch({ url: 'https://example.com/', config: { max_length: 1 } }),
+      /requested byte limit/,
+    );
+    await assert.rejects(
+      engine.extract({ html: '', source_url: 'https://example.com/' }),
+      /identity/,
+    );
+    engine.worker.call = async () => ({
+      url: 'https://example.com/',
+      title: '',
+      content: 'text',
+      format: 'html',
+      truncated: false,
+      iframe_count: 0,
+    });
+    await assert.rejects(engine.render({ url: 'https://example.com/' }), /requested format/);
+  } finally {
+    await engine.close();
+  }
+});

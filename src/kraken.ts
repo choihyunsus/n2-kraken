@@ -4,7 +4,7 @@ import { NativeWorker } from './worker';
 import type { WorkerOptions } from './worker-path';
 import { extractInput, fetchInput, renderInput, searchInput } from './input';
 import type { ExtractInput, FetchInput, RenderInput, SearchInput, ResearchInput } from './input';
-import { extractedDocument, renderedDocument, searchResults } from './report';
+import { checkedMarkdown, checkedRender, searchResults } from './report';
 import { runResearch } from './research';
 import { readResearch, listResearch } from './research-store';
 import { learnResearch } from './learning';
@@ -26,18 +26,31 @@ export class Kraken {
 
   extract(input: ExtractInput, signal?: AbortSignal) {
     const request = extractInput.parse(input);
-    return this.perform(
-      async (signal) =>
-        extractedDocument.parse(await this.worker.call('extract', request, 30000, signal)),
-      signal,
-    );
+    return this.perform(async (signal) => {
+      const document = checkedMarkdown(
+        await this.worker.call('extract', request, 30000, signal),
+        request.config.max_length,
+      );
+      let expected = '';
+      if (request.source_url) {
+        const url = new URL(request.source_url);
+        url.hash = '';
+        expected = url.toString();
+      }
+      if (document.source_url !== expected)
+        throw new Error('Extracted source identity does not match the supplied URL');
+      return document;
+    }, signal);
   }
 
   fetch(input: FetchInput, signal?: AbortSignal) {
     const request = fetchInput.parse(input);
     return this.perform(
       async (signal) =>
-        extractedDocument.parse(await this.worker.call('fetch', request, 70000, signal)),
+        checkedMarkdown(
+          await this.worker.call('fetch', request, 70000, signal),
+          request.config.max_length,
+        ),
       signal,
     );
   }
@@ -46,7 +59,11 @@ export class Kraken {
     const request = renderInput.parse(input);
     return this.perform(
       async (signal) =>
-        renderedDocument.parse(await this.worker.call('render', request, 50000, signal)),
+        checkedRender(
+          await this.worker.call('render', request, 50000, signal),
+          request.max_length,
+          request.format,
+        ),
       signal,
     );
   }

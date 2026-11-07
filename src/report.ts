@@ -115,3 +115,21 @@ export type SearchResult = z.output<typeof searchResults>[number];
 export type CrawledPage = z.output<typeof crawledPage>;
 export type SourceFact = z.output<typeof fact>;
 export type ResearchReport = z.output<typeof researchReport>;
+
+export function checkedMarkdown(value: unknown, maximum: number): ExtractedDocument {
+  const document = extractedDocument.parse(value);
+  if (Buffer.byteLength(document.markdown) > maximum)
+    throw new Error('Native Markdown exceeds its requested byte limit');
+  return document;
+}
+
+export function checkedRender(
+  value: unknown,
+  maximum: number,
+  format: 'text' | 'html',
+): RenderedDocument {
+  const document = renderedDocument.parse(value);
+  if (Buffer.byteLength(document.content) > maximum || document.format !== format)
+    throw new Error('Native render does not match its requested format or byte limit');
+  return document;
+}
