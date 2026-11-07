@@ -90,8 +90,8 @@ jobs:
       - run: npm install --no-fund ../release/n2-kraken-1.0.0.tgz typescript@5.9.3 @types/node@22.19.15
         working-directory: consumer
       - run: node -e "require('node:fs').cpSync('tests','consumer/node_modules/n2-kraken/tests',{recursive:true});"
-      - run: node --test --test-timeout=45000 node_modules/n2-kraken/tests/*.test.cjs
-        working-directory: consumer
+      - run: node --test --test-timeout=45000 "tests/*.test.cjs"
+        working-directory: consumer/node_modules/n2-kraken
       - run: npm exec --offline -- tsc --noEmit --module Node16 --moduleResolution Node16 --target ES2022 --strict --noUncheckedIndexedAccess --esModuleInterop node_modules/n2-kraken/tests/types/consumer.ts
         working-directory: consumer
       - run: npm exec --offline -- n2-kraken --version
