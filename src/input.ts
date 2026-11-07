@@ -7,26 +7,21 @@ export const htmlConfig = z.strictObject({
   include_images: z.boolean().default(false),
   max_length: z.int().min(0).max(MIB).default(50000),
 });
-export const studyConfig = z
-  .strictObject({
-    max_results: z.int().min(1).max(40).default(10),
-    max_crawl_pages: z.int().min(1).max(20).default(5),
-    min_confidence: z.number().min(0.5).max(1).default(0.6),
-    max_content_length: z.int().min(50).max(100000).default(5000),
-    timeout_ms: z.int().min(100).max(120000).default(30000),
-    total_timeout_ms: z.int().min(100).max(600000).default(180000),
-    time_range: z.enum(['', '1w', '1m', '3m', '6m', '1y']).default('3m'),
-    engines: z
-      .array(z.enum(['ddg', 'bing', 'naver', 'google', 'searxng']))
-      .min(1)
-      .max(5)
-      .refine((value) => new Set(value).size === value.length)
-      .default(['ddg', 'bing', 'naver']),
-  })
-  .refine(
-    (value) => value.max_crawl_pages <= value.max_results,
-    'Crawl page limit cannot exceed the search result limit',
-  );
+export const studyConfig = z.strictObject({
+  max_results: z.int().min(1).max(40).default(10),
+  max_crawl_pages: z.int().min(1).max(20).default(5),
+  min_confidence: z.number().min(0.5).max(1).default(0.6),
+  max_content_length: z.int().min(50).max(100000).default(5000),
+  timeout_ms: z.int().min(100).max(120000).default(30000),
+  total_timeout_ms: z.int().min(100).max(600000).default(180000),
+  time_range: z.enum(['', '1w', '1m', '3m', '6m', '1y']).default('3m'),
+  engines: z
+    .array(z.enum(['ddg', 'bing', 'naver', 'google', 'searxng']))
+    .min(1)
+    .max(5)
+    .refine((value) => new Set(value).size === value.length)
+    .default(['ddg', 'bing', 'naver']),
+});
 
 export const extractInput = z.strictObject({
   html: utf8(8 * MIB),

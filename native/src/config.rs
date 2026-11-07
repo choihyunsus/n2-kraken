@@ -40,7 +40,6 @@ impl StudyConfig {
     pub fn validate(&self) -> Result<(), super::error::KrakenError> {
         let valid = (1..=40).contains(&self.max_results)
             && (1..=20).contains(&self.max_crawl_pages)
-            && self.max_crawl_pages <= self.max_results
             && self.min_confidence.is_finite()
             && (0.5..=1.0).contains(&self.min_confidence)
             && (50..=100_000).contains(&self.max_content_length)
@@ -105,6 +104,13 @@ pub(crate) fn validate_query(query: &str) -> Result<(), super::error::KrakenErro
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn search_limit_can_be_reduced_without_changing_the_crawl_limit() {
+        let config: StudyConfig = serde_json::from_str(r#"{"max_results":1}"#).unwrap();
+        assert_eq!(config.max_results, 1);
+        assert!(config.validate().is_ok());
+    }
 
     #[test]
     fn public_configuration_rejects_invalid_limits_and_unknown_fields() {

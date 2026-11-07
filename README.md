@@ -74,7 +74,7 @@ The ESM entry point supports `import { Kraken } from 'n2-kraken'`. Type declarat
 | Field | Default | Supported range |
 | --- | --- | --- |
 | `max_results` | 10 | 1–40 |
-| `max_crawl_pages` | 5 | 1–20, at most `max_results` |
+| `max_crawl_pages` | 5 | 1–20, applied to the returned search results |
 | `max_content_length` | 5,000 | 50–100,000 UTF-8 bytes per source |
 | `min_confidence` | 0.6 | 0.5–1.0 heuristic agreement |
 | `timeout_ms` | 30,000 | 100–120,000 per engine/page |

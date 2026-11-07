@@ -95,17 +95,20 @@ test('configured SearXNG is actually queried while its private crawl targets rem
     const input = {
       requestId: 'native-fixture',
       topic: 'Rust memory safety &url=https://other.invalid',
-      config: { engines: ['searxng'], max_results: 1, max_crawl_pages: 1, total_timeout_ms: 5000 },
+      config: { engines: ['searxng'], max_results: 1, total_timeout_ms: 5000 },
     };
+    const results = await engine.search({ query: input.topic, config: input.config });
+    assert.equal(results.length, 1);
+    assert.equal(results[0].url, searxngUrl + '/private');
     const first = await engine.research(input);
     assert.equal(first.report.summary.search_results, 1);
     assert.equal(first.report.summary.pages_crawled, 0);
     assert.equal(first.report.failures.length, 1);
-    assert.equal(searches, 1);
+    assert.equal(searches, 2);
     assert.equal(unexpected, 0);
     const second = await engine.research(input);
     assert.equal(second.reportHash, first.reportHash);
-    assert.equal(searches, 1);
+    assert.equal(searches, 2);
     const learned = await engine.learn(input.requestId);
     assert.equal(learned.insights.length, 0);
     assert.equal(engine.listResearch().length, 1);

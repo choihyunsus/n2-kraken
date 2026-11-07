@@ -71,7 +71,7 @@ ESM에서는 `import { Kraken } from 'n2-kraken'`을 사용합니다. TypeScript
 | 필드 | 기본값 | 범위 |
 | --- | --- | --- |
 | `max_results` | 10 | 1–40 |
-| `max_crawl_pages` | 5 | 1–20, `max_results` 이하 |
+| `max_crawl_pages` | 5 | 1–20, 반환된 검색 결과에 적용 |
 | `max_content_length` | 5,000 | 출처당 50–100,000 UTF-8 바이트 |
 | `min_confidence` | 0.6 | 출처 일치 점수 0.5–1.0 |
 | `timeout_ms` | 30,000 | 엔진·페이지당 100–120,000밀리초 |
