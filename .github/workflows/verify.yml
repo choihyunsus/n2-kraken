@@ -17,15 +17,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: native/target
+          key: kraken-rust-1.98-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('native/Cargo.lock', 'scripts/build-native.cjs') }}
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y clang libclang-dev cmake ninja-build
       - run: npm ci
       - name: Configure reproducible Rust paths
-        run: node -e "const fs=require('node:fs'),os=require('node:os');const flags=['--remap-path-prefix='+process.cwd()+'=/n2-kraken','--remap-path-prefix='+os.homedir()+'=/build-home'];fs.appendFileSync(process.env.GITHUB_ENV,'CARGO_ENCODED_RUSTFLAGS='+flags.join(String.fromCharCode(31))+'\n');"
+        run: node -e "const fs=require('node:fs'),os=require('node:os');const flags=['--remap-path-prefix='+process.cwd()+'=/n2-kraken','--remap-path-prefix='+os.homedir()+'=/build-home'];if(process.platform==='win32')flags.push('-Ctarget-feature=+crt-static');fs.appendFileSync(process.env.GITHUB_ENV,'CARGO_ENCODED_RUSTFLAGS='+flags.join(String.fromCharCode(31))+'\n');"
       - run: npm run build:native
-      - run: cargo +1.98.0 test --manifest-path native/Cargo.toml --release --locked --all-targets -j 2
-      - run: cargo +1.98.0 test --manifest-path native/Cargo.toml --release --locked --no-default-features --all-targets -j 2
-      - run: cargo +1.98.0 clippy --manifest-path native/Cargo.toml --release --locked --all-targets -j 2 -- -D warnings
+      - run: cargo +1.98.0 test --manifest-path native/Cargo.toml --release --locked --all-targets -j 2 ${{ runner.os == 'Windows' && '--target x86_64-pc-windows-msvc' || '' }}
+      - run: cargo +1.98.0 test --manifest-path native/Cargo.toml --release --locked --no-default-features --all-targets -j 2 ${{ runner.os == 'Windows' && '--target x86_64-pc-windows-msvc' || '' }}
+      - run: cargo +1.98.0 clippy --manifest-path native/Cargo.toml --release --locked --all-targets -j 2 ${{ runner.os == 'Windows' && '--target x86_64-pc-windows-msvc' || '' }} -- -D warnings
       - run: cargo +1.98.0 fmt --manifest-path native/Cargo.toml --check
       - run: npm test
       - run: npm audit --omit=dev --audit-level=low
@@ -59,15 +63,7 @@ jobs:
       - run: chmod 755 bin/*
       - run: mkdir release && npm pack --pack-destination release
       - name: Check packaged native permissions
-        run: |
-          python - <<'PY'
-          import glob,tarfile
-          with tarfile.open(glob.glob('release/*.tgz')[0]) as archive:
-              workers=[entry for entry in archive.getmembers() if entry.name.startswith('package/bin/n2-kraken-worker-')]
-              assert len(workers)==3, [entry.name for entry in workers]
-              assert all(entry.mode & 0o111 == 0o111 for entry in workers)
-              assert not any('/target/' in entry.name or '/node_modules/' in entry.name for entry in archive.getmembers())
-          PY
+        run: python scripts/inspect-package.py release/n2-kraken-1.0.0.tgz
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: kraken-package

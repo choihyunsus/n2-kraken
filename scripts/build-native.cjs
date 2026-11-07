@@ -15,6 +15,16 @@ if (process.env.RUSTFLAGS && !process.env.CARGO_ENCODED_RUSTFLAGS)
     'Use CARGO_ENCODED_RUSTFLAGS for custom compiler flags so paths containing spaces remain intact.',
   );
 const flags = (process.env.CARGO_ENCODED_RUSTFLAGS || '').split('\x1f').filter(Boolean);
+const windowsTargets = {
+  x64: 'x86_64-pc-windows-msvc',
+  arm64: 'aarch64-pc-windows-msvc',
+  ia32: 'i686-pc-windows-msvc',
+};
+const targetTriple = process.platform === 'win32' ? windowsTargets[process.arch] : undefined;
+if (process.platform === 'win32' && !targetTriple)
+  throw new Error('Unsupported Windows architecture');
+if (targetTriple && !flags.includes('-Ctarget-feature=+crt-static'))
+  flags.push('-Ctarget-feature=+crt-static');
 for (const flag of [
   `--remap-path-prefix=${root}=/n2-kraken`,
   `--remap-path-prefix=${os.homedir()}=/build-home`,
@@ -29,6 +39,7 @@ const result = spawnSync(
     'Cargo.toml',
     '--release',
     '--locked',
+    ...(targetTriple ? ['--target', targetTriple] : []),
     '--bin',
     'n2-kraken-worker',
     '-j',
@@ -53,6 +64,9 @@ const destination = path.join(
   `n2-kraken-worker-${process.platform}-${process.arch}${extension}`,
 );
 fs.mkdirSync(path.dirname(destination), { recursive: true });
-fs.copyFileSync(path.join(target, 'release', `n2-kraken-worker${extension}`), destination);
+const releaseDirectory = targetTriple
+  ? path.join(target, targetTriple, 'release')
+  : path.join(target, 'release');
+fs.copyFileSync(path.join(releaseDirectory, `n2-kraken-worker${extension}`), destination);
 fs.chmodSync(destination, 0o755);
 process.stdout.write(`Native worker built for ${process.platform}-${process.arch}\n`);
