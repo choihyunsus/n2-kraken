@@ -8,6 +8,8 @@ Public web retrieval and source-backed research for local agents. Kraken provide
 
 Requires Node.js 22 or newer. Install the GitHub release archive.
 
+The archive includes workers for Windows x64, Linux x64 and macOS arm64. The Linux worker requires glibc 2.39 or newer and the system C++ runtime. The macOS worker declares a deployment target of 11.0, and the installed Node.js version has its own OS requirements. CI exercises the current GitHub-hosted runner for each platform. Build locally for other architectures or older compatible systems.
+
 ```sh
 npm install https://github.com/choihyunsus/n2-kraken/releases/download/v1.0.0/n2-kraken-1.0.0.tgz
 ```

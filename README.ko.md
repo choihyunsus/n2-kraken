@@ -8,6 +8,8 @@
 
 Node.js 22 이상이 필요합니다. GitHub 릴리스의 패키지를 설치합니다.
 
+배포 파일에는 Windows x64, Linux x64, macOS arm64 워커가 포함됩니다. Linux 워커는 glibc 2.39 이상과 시스템 C++ 런타임이 필요합니다. macOS 워커의 빌드상 최소 대상 버전은 11.0이며, 설치한 Node.js의 OS 요구 사항도 적용됩니다. CI는 각 플랫폼의 현재 GitHub 제공 실행 환경에서 검증합니다. 다른 아키텍처나 이전 호환 환경에서는 로컬 빌드를 사용하세요.
+
 ```sh
 npm install https://github.com/choihyunsus/n2-kraken/releases/download/v1.0.0/n2-kraken-1.0.0.tgz
 ```
