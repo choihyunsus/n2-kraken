@@ -1,11 +1,11 @@
 // Chrome launch settings; chromiumoxide adds the double-dash prefix itself.
 use chromiumoxide::browser::BrowserConfig;
+#[cfg(target_os = "windows")]
 use tracing::info;
 /// Find Chrome executable on Windows.
 #[cfg(target_os = "windows")]
 fn find_chrome() -> Option<std::path::PathBuf> {
     let candidates = [
-        std::env::var("CHROME_PATH").ok(),
         std::env::var("PROGRAMFILES")
             .ok()
             .map(|p| format!("{p}\\Google\\Chrome\\Application\\chrome.exe")),
@@ -64,8 +64,11 @@ pub(super) fn build(
         .arg("hide-scrollbars")
         .arg("mute-audio");
 
-    // Explicit Chrome path — chromiumoxide's Windows detection may miss it
-    if let Some(chrome) = find_chrome() {
+    // Honor the operator's explicit path on every supported operating system.
+    let chrome = std::env::var_os("CHROME_PATH")
+        .map(std::path::PathBuf::from)
+        .or_else(find_chrome);
+    if let Some(chrome) = chrome {
         builder = builder.chrome_executable(chrome);
     }
 

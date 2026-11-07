@@ -39,3 +39,68 @@ jobs:
           name: kraken-native-${{ runner.os }}-${{ runner.arch }}
           path: bin/*
           if-no-files-found: error
+  package:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: kraken-native-*
+          merge-multiple: true
+          path: bin
+      - run: chmod 755 bin/*
+      - run: mkdir release && npm pack --pack-destination release
+      - name: Check packaged native permissions
+        run: |
+          python - <<'PY'
+          import glob,tarfile
+          with tarfile.open(glob.glob('release/*.tgz')[0]) as archive:
+              workers=[entry for entry in archive.getmembers() if entry.name.startswith('package/bin/n2-kraken-worker-')]
+              assert len(workers)==3, [entry.name for entry in workers]
+              assert all(entry.mode & 0o111 == 0o111 for entry in workers)
+              assert not any('/target/' in entry.name or '/node_modules/' in entry.name for entry in archive.getmembers())
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kraken-package
+          path: release/*.tgz
+          if-no-files-found: error
+  installed-consumer:
+    needs: package
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: kraken-package
+          path: release
+      - run: node -e "const fs=require('node:fs');fs.mkdirSync('consumer');fs.writeFileSync('consumer/package.json',JSON.stringify({name:'kraken-consumer',version:'1.0.0',private:true}));"
+      - run: npm install --no-fund ../release/n2-kraken-1.0.0.tgz typescript@5.9.3 @types/node@22.19.15
+        working-directory: consumer
+      - run: node -e "require('node:fs').cpSync('tests','consumer/node_modules/n2-kraken/tests',{recursive:true});"
+      - run: node --test --test-timeout=45000 node_modules/n2-kraken/tests/*.test.cjs
+        working-directory: consumer
+      - run: npm exec --offline -- tsc --noEmit --module Node16 --moduleResolution Node16 --target ES2022 --strict --noUncheckedIndexedAccess --esModuleInterop node_modules/n2-kraken/tests/types/consumer.ts
+        working-directory: consumer
+      - run: npm exec --offline -- n2-kraken --version
+        working-directory: consumer
+      - run: node --input-type=module -e "import {Kraken} from 'n2-kraken';const engine=new Kraken({dbPath:':memory:',project:'esm',agent:'reader'});await engine.close();"
+        working-directory: consumer
+      - run: npm audit --omit=dev --audit-level=low
+        working-directory: consumer

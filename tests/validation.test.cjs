@@ -28,7 +28,7 @@ test('native reports reject hash, source, agreement, contradiction and summary c
 });
 
 test('inputs reject malformed Unicode and callers cannot supply trusted network endpoints', () => {
-  for (const requestId of ['', 'with space', 'bad\0id', '\ud800', '한'.repeat(43)])
+  for (const requestId of ['', 'with space', 'bad\0id', '\ud800', '\u0085', '한'.repeat(43)])
     assert.throws(() => researchInput.parse({ requestId, topic: 'Rust' }));
   assert.throws(() =>
     researchInput.parse({

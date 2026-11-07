@@ -17,8 +17,8 @@ export interface LearningReceipt {
   policyId: string;
   reportHash: string;
   accepted: number[];
-  sources: { url: string; id: string }[];
-  insights: { index: number; id: string }[];
+  sources: { url: string; id: string; created: boolean | null }[];
+  insights: { index: number; id: string; created: boolean | null }[];
   learnedAt: number;
 }
 export interface LearnResult extends LearningReceipt {

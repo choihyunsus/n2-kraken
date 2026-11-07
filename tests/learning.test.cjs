@@ -218,8 +218,16 @@ test('repeated research reuses the same claim and reports zero newly learned ins
   assert.equal(first.newInsights, 1);
   assert.equal(second.newSources, 0);
   assert.equal(second.newInsights, 0);
-  assert.deepEqual(second.sources, first.sources);
-  assert.deepEqual(second.insights, first.insights);
+  assert.deepEqual(
+    second.sources.map(({ id }) => id),
+    first.sources.map(({ id }) => id),
+  );
+  assert.deepEqual(
+    second.insights.map(({ id }) => id),
+    first.insights.map(({ id }) => id),
+  );
+  assert.equal(first.insights[0].created, true);
+  assert.equal(second.insights[0].created, false);
   assert.deepEqual(counts(store), [3, 1, 2, 3, 2]);
 });
 
@@ -271,4 +279,87 @@ test('late-finishing old research cannot replace a more recently retrieved sourc
   await assert.rejects(learnResearch(store, 'old'), /older or conflicting observation/);
   const repeated = await learnResearch(store, 'new');
   assert.deepEqual(repeated.sources, current.sources);
+});
+
+test('creation provenance survives replay after a consumer loses its first learning result', async (t) => {
+  const { store, settings } = fixture(t);
+  seed(store);
+  await learnResearch(store, 'fixture-request');
+  const reopened = new KrakenStore(settings);
+  try {
+    const replay = await learnResearch(reopened, 'fixture-request');
+    assert.equal(replay.newInsights, 0);
+    assert.equal(replay.insights.filter((insight) => insight.created === true).length, 1);
+    assert.equal(replay.sources.filter((source) => source.created === true).length, 3);
+  } finally {
+    reopened.close();
+  }
+});
+
+test('legacy receipts preserve unknown creation history while retaining valid evidence', async (t) => {
+  const { store } = fixture(t);
+  seed(store);
+  const first = await learnResearch(store, 'fixture-request');
+  store.connection.execute('UPDATE kraken_learning SET source_ids_json=?,insight_ids_json=?', [
+    JSON.stringify(first.sources.map(({ url, id }) => ({ url, id }))),
+    JSON.stringify(first.insights.map(({ index, id }) => ({ index, id }))),
+  ]);
+  const replay = await learnResearch(store, 'fixture-request');
+  assert.equal(replay.status, 'already_learned');
+  assert.equal(replay.sources[0].created, null);
+  assert.equal(replay.insights[0].created, null);
+  assert.equal(replay.newInsights, 0);
+});
+
+test('late receipt failure restores prior evidence, invalidations and the claim cache atomically', async (t) => {
+  const { store } = fixture(t);
+  seed(store, 'old');
+  const first = await learnResearch(store, 'old');
+  const latest = report(
+    'Rust has updated source documentation describing safe ownership and concurrency.',
+  );
+  for (const page of latest.pages) page.fetched_at = '1700000001';
+  seed(store, 'new', latest);
+  const before = counts(store),
+    original = store.connection.execute.bind(store.connection);
+  store.connection.execute = (sql, values) => {
+    if (sql.includes('INSERT INTO kraken_learning')) throw new Error('late receipt failure');
+    return original(sql, values);
+  };
+  await assert.rejects(learnResearch(store, 'new'), /late receipt failure/);
+  store.connection.execute = original;
+  assert.deepEqual(counts(store), before);
+  assert.equal(store.connection.query('SELECT count(*) AS count FROM kraken_claims')[0].count, 1);
+  assert.equal(
+    store.connection.query('SELECT count(*) AS count FROM mimir_evidence_invalidations')[0].count,
+    0,
+  );
+  assert.deepEqual((await learnResearch(store, 'old')).sources, first.sources);
+  assert.equal((await learnResearch(store, 'new')).newInsights, 1);
+});
+
+test('a restarted consumer can inspect a custom-policy receipt without the old worker or callback', async (t) => {
+  const { Kraken } = require('../dist/library');
+  const { store, settings } = fixture(t);
+  seed(store);
+  const learned = await learnResearch(store, 'fixture-request', {
+    id: 'host-review-v1',
+    screen: () => [0],
+  });
+  const before = counts(store),
+    reader = new Kraken(settings),
+    other = new Kraken({ ...settings, agent: 'other' });
+  try {
+    assert.deepEqual(
+      reader.getLearning('fixture-request', 'host-review-v1').insights,
+      learned.insights,
+    );
+    assert.equal(other.getLearning('fixture-request', 'host-review-v1'), undefined);
+    assert.deepEqual(counts(store), before);
+    store.connection.execute('UPDATE kraken_learning SET report_hash=?', ['a'.repeat(64)]);
+    assert.throws(() => reader.getLearning('fixture-request', 'host-review-v1'), /does not match/);
+  } finally {
+    await reader.close();
+    await other.close();
+  }
 });

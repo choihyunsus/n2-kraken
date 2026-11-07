@@ -15,10 +15,8 @@ export function utf8(maximum: number) {
 }
 export const identity = utf8(128)
   .min(1)
-  .regex(/^[^\s\x00-\x1f\x7f]+$/u);
-export const query = utf8(4096).refine(
-  (value) => !!value.trim() && !/[\x00-\x1f\x7f]/u.test(value),
-);
+  .regex(/^[^\s\p{Cc}]+$/u);
+export const query = utf8(4096).refine((value) => !!value.trim() && !/\p{Cc}/u.test(value));
 export const hash = z.string().regex(/^[a-f0-9]{64}$/);
 export const reference = z.string().uuid();
 export const webUrl = utf8(8192).refine((value) => {
@@ -30,7 +28,7 @@ export const webUrl = utf8(8192).refine((value) => {
       !url.username &&
       !url.password &&
       url.port !== '0' &&
-      !/[\x00-\x20\x7f]/u.test(value)
+      !/[\s\p{Cc}]/u.test(value)
     );
   } catch {
     return false;

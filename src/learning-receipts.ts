@@ -11,9 +11,10 @@ const indices = z
   .array(z.int().min(0).max(299))
   .max(300)
   .refine((values) => new Set(values).size === values.length);
-const sources = z.array(z.strictObject({ url: webUrl, id: reference })).max(20);
+const created = z.boolean().nullable().default(null);
+const sources = z.array(z.strictObject({ url: webUrl, id: reference, created })).max(20);
 const insights = z
-  .array(z.strictObject({ index: z.int().min(0).max(299), id: reference }))
+  .array(z.strictObject({ index: z.int().min(0).max(299), id: reference, created }))
   .max(300);
 
 export function readLearning(

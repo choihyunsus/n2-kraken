@@ -60,6 +60,7 @@ ESM에서는 `import { Kraken } from 'n2-kraken'`을 사용합니다. TypeScript
 | `research({requestId, topic, config?, semantic?}, signal?)` | 조사 요약·출처 본문·실패·주장 비교 결과를 기록 |
 | `getResearch(requestId)` | 기록된 전체 조사 결과 조회 |
 | `listResearch(limit?, offset?)` | 현재 범위의 조사 기록 목록 조회 |
+| `getLearning(requestId, policyId?)` | 워커나 정책 실행 없이 과거 학습 기록 조회 |
 | `learn(requestId, {policy?, signal?}?)` | 출처·미검증 통찰·학습 기록을 하나의 트랜잭션으로 저장 |
 | `close()` | 진행 중인 작업을 취소하고 DB 연결 종료 |
 
@@ -117,6 +118,10 @@ await kraken.learn('rust-memory-safety-001', {
 ```
 
 비동기 정책 판단은 30초로 제한됩니다. 동기 콜백은 호스트가 신속하게 반환하도록 구현해야 합니다. 실제 기록은 15초 한도의 단일 Mimir 트랜잭션으로 처리합니다. `newSources`와 `newInsights`는 현재 호출에서 새로 추가한 개수입니다. 모듈은 `meta`의 `kraken_schema_version`과 네 개의 범위별 테이블 `kraken_research`, `kraken_sources`, `kraken_claims`, `kraken_learning`을 사용합니다. 조사 원문은 기록당 최대 4 MiB이며 사용량에 따라 누적되므로 운영자가 보관·아카이브 정책을 관리해야 합니다.
+
+각 출처·통찰 참조의 `created` 필드는 해당 학습 기록을 쓴 트랜잭션에서 새로 생성했는지를 보존합니다. 결과를 받기 전에 소비 모듈이 종료돼도 재호출로 생성 여부를 복원할 수 있습니다. 이 필드가 없는 이전 기록은 생성 여부를 알 수 없다는 의미로 `null`을 반환합니다.
+
+`getLearning`은 사용자 정책 버전을 포함한 과거 기록을 재시작 후 조회합니다. 복구 쓰기나 정책 콜백을 실행하지 않습니다. 이후 출처가 무효화될 수 있으므로 이 결과는 해당 트랜잭션 당시의 기록을 나타냅니다.
 
 ## CLI와 MCP
 

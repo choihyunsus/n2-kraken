@@ -215,7 +215,10 @@ async fn shutdown_with_busy_lock(browser: &HeadlessBrowser) {
         );
     }
     #[cfg(not(windows))]
-    super::shutdown().await;
+    {
+        super::shutdown().await;
+        assert!(*browser.shutdown.borrow());
+    }
 }
 
 async fn private_fixture() -> (

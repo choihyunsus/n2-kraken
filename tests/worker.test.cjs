@@ -250,3 +250,27 @@ test('library entry points enforce requested output bounds and source identity i
     await engine.close();
   }
 });
+
+test('an explicit missing Chrome executable fails before page retrieval on every platform', () => {
+  const result = spawnSync(workerPath, [], {
+    input: JSON.stringify({
+      protocol: 1,
+      id: 'chrome-path-fixture',
+      command: {
+        operation: 'render',
+        arguments: { url: 'https://1.1.1.1/', format: 'html' },
+      },
+    }),
+    encoding: 'utf8',
+    timeout: 5000,
+    windowsHide: true,
+    env: {
+      SystemRoot: process.env.SystemRoot,
+      WINDIR: process.env.WINDIR,
+      CHROME_PATH: require('node:path').join(__dirname, 'missing-chrome-executable'),
+    },
+  });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 2);
+  assert.match(JSON.parse(result.stdout).error.message, /Chrome unavailable/);
+});

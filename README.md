@@ -63,6 +63,7 @@ The ESM entry point supports `import { Kraken } from 'n2-kraken'`. Type declarat
 | `research({requestId, topic, config?, semantic?}, signal?)` | Persisted summary, source pages, failures and agreement candidates |
 | `getResearch(requestId)` | The full stored receipt, or `undefined` |
 | `listResearch(limit?, offset?)` | Scoped receipt identifiers and hashes |
+| `getLearning(requestId, policyId?)` | Historical learning receipt without running a worker or policy |
 | `learn(requestId, {policy?, signal?}?)` | Atomic evidence, insight and learning receipt publication |
 | `close()` | Cancellation of owned work followed by database closure |
 
@@ -120,6 +121,10 @@ await kraken.learn('rust-memory-safety-001', {
 ```
 
 The asynchronous policy deadline is 30 seconds. Synchronous host callbacks must return promptly. Publication uses one Mimir transaction with a 15-second bound. `newSources` and `newInsights` describe additions made by the current call. The module records its schema in `meta.kraken_schema_version` and owns four scoped tables, `kraken_research`, `kraken_sources`, `kraken_claims` and `kraken_learning`. Raw reports have a 4 MiB per-record limit. Retained history grows with use and remains available for operator-managed archival.
+
+Each source and insight reference also retains a durable `created` flag for the transaction that wrote that receipt generation. A consumer recovering after a lost response can distinguish its newly created knowledge from reused evidence. Legacy receipts without that field return `null`, preserving unknown creation history.
+
+`getLearning` reads that historical receipt, including custom policy versions, after restart. It performs no repair or policy callback. Later source invalidation can make historical evidence stale, so the receipt describes the recorded transaction.
 
 ## CLI and MCP
 

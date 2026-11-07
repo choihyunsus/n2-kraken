@@ -76,7 +76,7 @@ function publishEvidence(
       checkDeadline(deadline);
       const source = retainSource(store, page);
       newSources += Number(source.created);
-      return { url: page.url, id: source.id };
+      return { url: page.url, id: source.id, created: source.created };
     });
   const insights = accepted.map((index) => {
     checkDeadline(deadline);
@@ -84,7 +84,7 @@ function publishEvidence(
     const ids = fact.sources.map((url) => sources.find((source) => source.url === url)!.id);
     const insight = retainInsight(store, fact, ids);
     newInsights += Number(insight.created);
-    return { index, id: insight.id };
+    return { index, id: insight.id, created: insight.created };
   });
   return { sources, insights, newSources, newInsights };
 }

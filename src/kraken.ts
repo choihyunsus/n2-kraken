@@ -9,6 +9,8 @@ import { runResearch } from './research';
 import { readResearch, listResearch } from './research-store';
 import { learnResearch } from './learning';
 import type { LearningPolicy } from './learning-types';
+import { readLearning } from './learning-receipts';
+import { identity } from './values';
 
 export interface KrakenOptions extends StoreOptions, WorkerOptions {}
 
@@ -104,6 +106,16 @@ export class Kraken {
   listResearch(limit = 20, offset = 0) {
     this.assertOpen();
     return listResearch(this.store, limit, offset);
+  }
+
+  getLearning(requestId: string, policyId = 'source-agreement-v1') {
+    this.assertOpen();
+    identity.parse(requestId);
+    identity.parse(policyId);
+    const receipt = readLearning(this.store, requestId, policyId);
+    if (receipt && readResearch(this.store, requestId)?.reportHash !== receipt.reportHash)
+      throw new Error('Learning receipt does not match its research');
+    return receipt;
   }
 
   close(): Promise<void> {
