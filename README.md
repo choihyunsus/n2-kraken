@@ -6,7 +6,20 @@
 
 [한국어](README.ko.md)
 
+<p align="center">
+  <img src="https://github.com/choihyunsus/n2-kraken/raw/refs/heads/main/docs/images/comic.png" alt="Find and read public web material, keeping the research together with its sources." width="640">
+</p>
+
+Find and read public web material, keeping the research together with its sources.
+
+A story illustrating the feature, rather than a screenshot of the app.
+
+<details>
+<summary>View the workflow</summary>
+
 ![Enter a topic or URL → Search and read pages → Keep results and sources](https://github.com/choihyunsus/n2-kraken/raw/refs/heads/main/docs/images/overview.svg)
+
+</details>
 
 ## When to use it
 

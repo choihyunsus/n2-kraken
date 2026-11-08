@@ -6,7 +6,20 @@
 
 [English](README.md)
 
+<p align="center">
+  <img src="https://github.com/choihyunsus/n2-kraken/raw/refs/heads/main/docs/images/comic.png" alt="자료의 출처를 질문하고 → 공개 웹페이지를 읽어 → 출처와 조사 결과를 보관하고 → 근거를 직접 검토합니다." width="640">
+</p>
+
+자료의 출처를 질문하고 → 공개 웹페이지를 읽어 → 출처와 조사 결과를 보관하고 → 근거를 직접 검토합니다.
+
+기능을 이야기로 표현한 만화입니다. 실제 앱 화면은 아닙니다.
+
+<details>
+<summary>동작 흐름 펼쳐 보기</summary>
+
 ![주제 또는 URL 입력 → 검색과 본문 수집 → 출처와 결과 저장](https://github.com/choihyunsus/n2-kraken/raw/refs/heads/main/docs/images/overview.ko.svg)
+
+</details>
 
 ## 이런 때 사용하세요
 
