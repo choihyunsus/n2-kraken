@@ -148,7 +148,7 @@ test('close cancels an outstanding native request and settles before database sh
 
 test('child transport rejects malformed UTF-8 and oversized standard output', async () => {
   await assert.rejects(
-    collectWorker(fake('process.stdout.write(Buffer.from([0xff]));process.exit(0)'), '{}', 5000),
+    collectWorker(fake("process.stdin.once('end', () => process.stdout.end(Buffer.from([0xff])));"), '{}', 5000),
     /UTF-8/,
   );
   await assert.rejects(
